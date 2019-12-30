@@ -12,7 +12,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
 import java.awt.image.ImageObserver;
+import java.awt.image.Kernel;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -129,9 +131,9 @@ class MainInter extends JFrame implements ActionListener, ListSelectionListener 
     JList imglist;
     JButton themanh;
     JButton thunho;
-    JButton phongto;
+    JButton thunho1;
     JButton xoayanh;
-    JButton anhtudong;
+    JButton bluranh;
     JButton catanh;
     DefaultListModel listmodel;
     JLabel lbl;
@@ -154,20 +156,20 @@ class MainInter extends JFrame implements ActionListener, ListSelectionListener 
         thunho.setBounds(470, 650, 100, 30);
         thunho.setBackground(Color.red);
 
-        phongto = new JButton("phong to");
-        phongto.addActionListener(this);
-        phongto.setBounds(590, 650, 100, 30);
-        phongto.setBackground(Color.red);
+        thunho1 = new JButton("thu nho 1");
+        thunho1.addActionListener(this);
+        thunho1.setBounds(590, 650, 100, 30);
+        thunho1.setBackground(Color.red);
 
         xoayanh = new JButton("xoay anh");
         xoayanh.addActionListener(this);
         xoayanh.setBounds(710, 650, 100, 30);
         xoayanh.setBackground(Color.red);
 
-        anhtudong = new JButton("tu dong");
-        anhtudong.addActionListener(this);
-        anhtudong.setBounds(830, 650, 100, 30);
-        anhtudong.setBackground(Color.red);
+        bluranh = new JButton("lam mo");
+        bluranh.addActionListener(this);
+        bluranh.setBounds(830, 650, 100, 30);
+        bluranh.setBackground(Color.red);
 
         catanh = new JButton("cat anh");
         catanh.addActionListener(this);
@@ -192,9 +194,9 @@ class MainInter extends JFrame implements ActionListener, ListSelectionListener 
         frame.add(imgb); //hien thi anh ve
         frame.add(themanh);
         frame.add(thunho);
-        frame.add(phongto);
+        frame.add(thunho1);
         frame.add(xoayanh);
-        frame.add(anhtudong);
+        frame.add(bluranh);
         frame.add(catanh);
         frame.add(lbl);
         frame.add(lbl1);
@@ -210,6 +212,7 @@ class MainInter extends JFrame implements ActionListener, ListSelectionListener 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == themanh) showFileDialog(frame);
         if (e.getSource() == thunho) resize();
+        if (e.getSource() == bluranh) blur();
 
     }
 
@@ -294,6 +297,92 @@ class MainInter extends JFrame implements ActionListener, ListSelectionListener 
             // scales the input image to the output image
             Graphics2D g2d = outputImage.createGraphics();
             g2d.drawImage(inputImage, 0, 0, scaledWidth, scaledHeight, null);
+            g2d.dispose();
+
+            // extracts extension of output file
+            String formatName = outputImagePath.substring(outputImagePath
+                    .lastIndexOf(".") + 1);
+
+            // writes to output file
+            ImageIO.write(outputImage, formatName, new File(outputImagePath));
+
+        } catch (IOException ex) {
+            System.out.println("Error resizing the image.");
+            ex.printStackTrace();
+        }
+
+    }
+    public void resize1() {
+        File inputFile = new File(imglist.getSelectedValue().toString());
+        try {
+            // resize to a fixed width (not proportional)
+            double percent = 0.2;
+            String outputImagePath = "D:/Photo/Puppy_Fixed.jpg";
+            BufferedImage inputImage = ImageIO.read(inputFile);
+            int scaledWidth = (int) (inputImage.getWidth() * percent);
+            int scaledHeight = (int) (inputImage.getHeight() * percent);
+
+            BufferedImage outputImage = new BufferedImage(scaledWidth,
+                    scaledHeight, inputImage.getType());
+
+            // scales the input image to the output image
+            Graphics2D g2d = outputImage.createGraphics();
+            g2d.drawImage(inputImage, 0, 0, scaledWidth, scaledHeight, null);
+            g2d.dispose();
+
+            // extracts extension of output file
+            String formatName = outputImagePath.substring(outputImagePath
+                    .lastIndexOf(".") + 1);
+
+            // writes to output file
+            ImageIO.write(outputImage, formatName, new File(outputImagePath));
+
+        } catch (IOException ex) {
+            System.out.println("Error resizing the image.");
+            ex.printStackTrace();
+        }
+
+    }
+    public void blur() {
+        File inputFile = new File(imglist.getSelectedValue().toString());
+        try {
+            // resize to a fixed width (not proportional)
+            BufferedImage inputImage = ImageIO.read(inputFile);
+
+
+
+            int height = inputImage.getHeight();
+            int width = inputImage.getWidth();
+            // result is transposed, so the width/height are swapped
+            BufferedImage temp =  new BufferedImage(width,height, BufferedImage.TYPE_INT_RGB);
+            double[] k = new double[] { 0.00598, 0.060626, 0.241843, 0.383103, 0.241843, 0.060626, 0.00598 };
+            // horizontal blur, transpose result
+            for (int y = 0; y < height; y++) {
+                for (int x = 3; x < width - 3; x++) {
+                    float r = 0, g = 0, b = 0;
+                    for (int i = 0; i < 7; i++) {
+                        int pixel = inputImage.getRGB(x + i - 3, y);
+                        b += (pixel & 0xFF) * k[i];
+                        g += ((pixel >> 8) & 0xFF) * k[i];
+                        r += ((pixel >> 16) & 0xFF) * k[i];
+                    }
+                    int p = (int)b + ((int)g << 8) + ((int)r << 16);
+                    // transpose result!
+                    temp.setRGB(x, y, p);
+                }
+            }
+
+            BufferedImage outputImage = temp;
+
+
+
+
+            String outputImagePath = "D:/Photo/Puppy_Fixed.jpg";
+
+
+
+            // scales the input image to the output image
+            Graphics2D g2d = outputImage.createGraphics();
             g2d.dispose();
 
             // extracts extension of output file
